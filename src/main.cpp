@@ -1,6 +1,7 @@
 /**
- * IC: 74HC4052N
+ * Project: Array of LDRs
  * Board: Arduino Nano
+ * IC: 74HC4052N, 74HC595
  * 
  * Copyright 2020 Tauno Erik
  * 
