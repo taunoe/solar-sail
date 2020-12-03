@@ -74,7 +74,7 @@ int * get_data() {
 
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
 
   pinMode(SELECT_A_PIN, OUTPUT);
   pinMode(SELECT_B_PIN, OUTPUT);
@@ -87,10 +87,12 @@ void setup() {
 void loop() {
   if (Serial.available()) {
     int in_byte = Serial.read();
-    DEBUG_PRINT("I received: ");
-    DEBUG_PRINTLN(in_byte);  // , DEC
+    //  int in_byte = Serial.readStringUntil('\n');
 
-    if (in_byte == 97) {  // 97 == a
+    //DEBUG_PRINT("I received: ");
+    //DEBUG_PRINTLN(in_byte);  // , DEC
+
+    if (in_byte == 'a') {  // 97 == a
       digitalWrite(LED_PIN, HIGH);
       int *table;  // a pointer to an int array
       table = get_data();
@@ -101,6 +103,8 @@ void loop() {
         Serial.print(table[i]);
       }
       Serial.println();
+    } else {
+      Serial.println(01234);
     }
   }
 }
