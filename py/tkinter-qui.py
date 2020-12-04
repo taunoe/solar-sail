@@ -101,11 +101,15 @@ def create_figure() -> Figure:
   return figure
   
 def redraw_figure(port, baudrate):
-  if not ser.is_open:
-    open_serial(port, baudrate)
-  figure = create_figure()
-  canvas.figure = figure
-  canvas.draw()
+  # if live mode
+  if check_live.instate(['disabled','selected']):
+    if not ser.is_open:
+      open_serial(port, baudrate)
+    figure = create_figure()
+    canvas.figure = figure
+    canvas.draw()
+    #main_window.after(200,redraw_figure(port, baudrate))
+  
   #main_window.after(100, redraw_figure(port, baudrate))
 
 def btn_connect_cmd():
@@ -189,5 +193,5 @@ canvas.draw()
 canvas.get_tk_widget().grid(row=1, column=0, columnspan=6)
 
 # Loop
-#main_window.after(100,idle,main_window,canvas)
+#main_window.after(0,redraw_figure(port, baudrate))
 main_window.mainloop()
