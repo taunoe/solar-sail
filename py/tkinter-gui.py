@@ -15,9 +15,17 @@ from tkinter.ttk import *
 import numpy as np
 import seaborn as sns
 import time
-
+#from PIL import Image, ImageTK
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
+
+empty_matrix = [[0,0,0,0,0,0],
+                [0,0,0,0,0,0],
+                [0,0,0,0,0,0],
+                [0,0,0,0,0,0],
+                [0,0,0,0,0,0],
+                [0,0,0,0,0,0]]
+
 
 def find_numbers(str):
   """
@@ -67,22 +75,22 @@ def read_serial():
     Read Serial port.
     Return matrix
   """
-  # Send command to Arduino
-  ser.write(b'a')
-  incoming_data = ser.readline()[:-2].decode('ascii')
-  
-  if type(incoming_data) == str:
+  try:
+    # Send command to Arduino
+    ser.write(b'a')
+    incoming_data = ser.readline()[:-2].decode('ascii')
     numbers = find_numbers(incoming_data)
+    # If list is empty
+    if not numbers:
+      print("No data on serial")
+      for x in range(48):
+        numbers.append(0)
     return numbers
-  return 0
+  except:
+    print("Error on read_serial()")
 
 def create_init_figure() -> Figure:
-  matrix = [[0,0,0,0,0,0],
-            [0,0,0,0,0,0],
-            [0,0,0,0,0,0],
-            [0,0,0,0,0,0],
-            [0,0,0,0,0,0],
-            [0,0,0,0,0,0]]
+  matrix = empty_matrix
   # plot the data
   figure = Figure(figsize=(6, 8))
   ax = figure.subplots()
@@ -90,56 +98,46 @@ def create_init_figure() -> Figure:
   return figure
 
 def create_figure() -> Figure:
-  matrix = read_serial()
-  if type(matrix) != list:
-    print("Bad data")
-  matrix = list_to_matrix(matrix)
-  # print(matrix)
-  figure = Figure(figsize=(6, 8))
-  ax = figure.subplots()
-  sns.heatmap(matrix, square=True, cbar=True, ax=ax)
-  return figure
+  try:
+    matrix = read_serial()
+    matrix = list_to_matrix(matrix)
+    print(matrix)
+    figure = Figure(figsize=(6, 8))
+    ax = figure.subplots()
+    sns.heatmap(matrix, square=True, cbar=True, ax=ax)
+    return figure
+  except:
+    ser.close()
+    print("Error on create_figure()!")
+  
   
 def redraw_figure(port, baudrate):
-  # if live mode
-  if check_live.instate(['disabled','selected']):
-    if not ser.is_open:
-      open_serial(port, baudrate)
+  if not ser.is_open:
+    open_serial(port, baudrate)
+  try:
     figure = create_figure()
-    canvas.figure = figure
-    canvas.draw()
-    #main_window.after(200,redraw_figure(port, baudrate))
-  
-  #main_window.after(100, redraw_figure(port, baudrate))
+    graph.figure = figure
+    graph.draw()
+  except:
+    print("Error on redraw_figure()!")
+
 
 def btn_connect_cmd():
   port = select_ports.get()
-  print(port)
   baudrate = select_bauds.get()
-  print(baudrate)
-  live = check_live.state()
-  check_live.state(['disabled'])
-  #check_live.instate(['selected'])  # returns True if the box is checked
-  print(live)
-
+  print("Selected Port: {}, baudrate: {}".format(port, baudrate))
   redraw_figure(port, baudrate)
 
-def idle(parent,canvas):
-  print("idle")
-  if check_live.instate(['disabled','selected']):
-    redraw_figure(port, baudrate)
-    canvas.update()
-    parent.after_idle(idle,parent,canvas)
 
 # Global variables
-
 avaible_ports = find_ports() # find avaible ports
 avaible_baudrates = ['300','1200','2400','4800','9600','19200','38400','57600',
                     '74880','115200','230400','250000','500000','1000000','2000000']
 baudrate = avaible_baudrates[4]
-port = '/dev/ttyUSB0'
+#port = '/dev/ttyUSB0'
 
-create_serial()
+
+create_serial() # create now and open later
 
 
 ####################################################
@@ -149,49 +147,57 @@ create_serial()
 main_window = tk.Tk()
 main_window.title("Tauno Solar Sailer")
 main_window.bind('q', 'exit')
+main_window.geometry("650x850")
 
+# Style
 style = tk.ttk.Style()
 #print(style.theme_names())
 style.theme_use('clam')
 
+# 1.
+menu_frame = Frame(main_window)
+menu_frame.pack(side=tk.TOP, fill = tk.X, expand=False)
 
-#style.configure("TButton", padding=6, relief="flat", background="#ccc")
-#style.configure("TLabel", padding=6, foreground="black", background="white")
+#1.1
+port_frame = Frame(menu_frame)
+port_frame.pack(side=tk.LEFT, fill = tk.X, expand=True)
+# 1.1.1. Label: Select Port
+label_ports = tk.ttk.Label(port_frame, text="Port:")
+label_ports.pack(side=tk.LEFT, expand=False)
 
-# Select Port
-label_ports = tk.ttk.Label(main_window, text="Port:", width=10)
-label_ports.grid(row=0, column=0)
-
-select_ports = tk.ttk.Combobox(textvariable='Ports', width=15)
+# 1.1.2. Combobox: Select Port
+select_ports = tk.ttk.Combobox(port_frame, textvariable='Ports')
 select_ports.insert(0,avaible_ports[0]) # Select first port
 select_ports['values'] = avaible_ports
-select_ports.grid(row=0, column=1)
+select_ports.pack(side=tk.LEFT, expand=False)
 
-# Select Badrate
-label_bauds = tk.ttk.Label(main_window, text="Baudrate:", width=15)
-label_bauds.grid(row=0, column=2)
-select_bauds = tk.ttk.Combobox(textvariable='Baudrates', width=15)
+#1.2
+baud_frame = Frame(menu_frame)
+baud_frame.pack(side=tk.LEFT, fill = tk.X, expand=True)
+# 1.2.1. Label: Select Baudrate
+label_bauds = tk.ttk.Label(baud_frame, text="Baudrate:")
+label_bauds.pack(side=tk.LEFT, expand=False)
+
+# 1.2.2. Combobox: Select Baudrate
+select_bauds = tk.ttk.Combobox(baud_frame, textvariable='Baudrates')
 select_bauds['values'] = avaible_baudrates
 select_bauds.insert(0, baudrate)
-select_bauds.grid(row=0, column=3)
+select_bauds.pack(side=tk.LEFT, expand=False)
 
-# Live Checkbutton
-check_live = tk.ttk.Checkbutton(main_window, text="Stay live", width=15)
-check_live.state(['!selected'])
-check_live.grid(row=0, column=4)
+# 1.3. Button
+btn_txt = tk.StringVar()
+button_connect = tk.ttk.Button(menu_frame, textvariable=btn_txt, command=btn_connect_cmd)
+btn_txt.set("Load Data")
+button_connect.pack(side=tk.LEFT, expand=True)
 
-# Button
-button_connect = tk.ttk.Button(text="Load Data", command=btn_connect_cmd, width=15)
-button_connect.grid(row=0, column=5)
+# 2.
+graph_frame = Frame(main_window)
+graph_frame.pack(fill = tk.BOTH, expand=True)
 
-# create empty figure and draw
+# 2.1. Graph
 init_figure = create_init_figure()
-canvas = FigureCanvasTkAgg(init_figure, master=main_window)
+graph = FigureCanvasTkAgg(init_figure, master=graph_frame)
+graph.draw()
+graph.get_tk_widget().pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
 
-canvas.draw()
-#canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-canvas.get_tk_widget().grid(row=1, column=0, columnspan=6)
-
-# Loop
-#main_window.after(0,redraw_figure(port, baudrate))
 main_window.mainloop()
