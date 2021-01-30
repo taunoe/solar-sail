@@ -8,3 +8,7 @@ It have Arduino Nano and CD4052 (not ideal) analog multiplekser. Python sends co
 ![LDR](img/LDR.png)
 ![Screenshot](img/Screenshot.png)
 ![Screenshot](img/Screenshot_cl.png)
+
+___
+
+Copyright 2021 Tauno Erik https://taunoerik.art
